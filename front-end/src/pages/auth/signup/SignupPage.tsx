@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Shield, MapPin, QrCode, Megaphone, Users, ClipboardList,
   Bell, Eye, EyeOff, Lock, Mail, UserRound, Phone, Hash,
-  BookOpen, UserPlus, ChevronDown, Building,
+  BookOpen, UserPlus, ChevronDown, Building, Upload, ImageIcon, FileText, X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -62,7 +62,11 @@ const SignupPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [idPicture, setIdPicture] = useState<File | null>(null);
+  const [corFile, setCorFile] = useState<File | null>(null);
+  const idPictureRef = useRef<HTMLInputElement>(null);
+  const corFileRef = useRef<HTMLInputElement>(null);
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData | 'idPicture' | 'corFile', string>>>({});
 
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
@@ -116,7 +120,7 @@ const SignupPage: React.FC = () => {
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof FormData, string>> = {};
+    const newErrors: Partial<Record<keyof FormData | 'idPicture' | 'corFile', string>> = {};
 
     if (!formData.role) newErrors.role = 'Please select your role';
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
@@ -129,6 +133,8 @@ const SignupPage: React.FC = () => {
     if (!formData.staysInDorm) newErrors.staysInDorm = 'Please select if you stay in dormitory';
     if (!formData.contactNumber.trim()) newErrors.contactNumber = 'Contact number is required';
     if (!formData.departmentCourse.trim()) newErrors.departmentCourse = 'This field is required';
+    if (!idPicture) newErrors.idPicture = 'ID picture is required';
+    if (formData.role === 'Student' && !corFile) newErrors.corFile = 'Certificate of Registration is required';
     if (formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
     }
@@ -432,6 +438,95 @@ const SignupPage: React.FC = () => {
                     <p className="text-[11px] text-red-500">{errors.departmentCourse}</p>
                   )}
                 </div>
+
+                {/* Divider – Uploads */}
+                <div className="flex items-center gap-3 py-0.5">
+                  <div className="flex-1 h-px bg-slate-200" />
+                  <span className="text-[11px] text-slate-500 font-medium">Uploads</span>
+                  <div className="flex-1 h-px bg-slate-200" />
+                </div>
+
+                {/* Upload ID Picture (all roles) */}
+                {formData.role && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-slate-700">Upload ID Picture</Label>
+                    <input
+                      ref={idPictureRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] ?? null;
+                        setIdPicture(file);
+                        if (file) setErrors((p) => ({ ...p, idPicture: '' }));
+                      }}
+                    />
+                    {idPicture ? (
+                      <div className="flex items-center gap-2 h-9 px-3 border border-slate-300 rounded-md bg-slate-50 text-sm text-slate-700">
+                        <ImageIcon size={14} className="shrink-0 text-slate-500" />
+                        <span className="truncate flex-1">{idPicture.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => { setIdPicture(null); if (idPictureRef.current) idPictureRef.current.value = ''; }}
+                          className="text-slate-400 hover:text-slate-700 transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => idPictureRef.current?.click()}
+                        className="w-full h-20 flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-slate-300 rounded-lg bg-white hover:bg-slate-50 hover:border-slate-400 transition-colors cursor-pointer"
+                      >
+                        <Upload size={18} className="text-slate-400" />
+                        <span className="text-xs text-slate-500">Click to upload an image</span>
+                      </button>
+                    )}
+                    {errors.idPicture && <p className="text-[11px] text-red-500">{errors.idPicture}</p>}
+                  </div>
+                )}
+
+                {/* Upload COR – Students only */}
+                {formData.role === 'Student' && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-slate-700">Upload COR (PDF)</Label>
+                    <input
+                      ref={corFileRef}
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] ?? null;
+                        setCorFile(file);
+                        if (file) setErrors((p) => ({ ...p, corFile: '' }));
+                      }}
+                    />
+                    {corFile ? (
+                      <div className="flex items-center gap-2 h-9 px-3 border border-slate-300 rounded-md bg-slate-50 text-sm text-slate-700">
+                        <FileText size={14} className="shrink-0 text-slate-500" />
+                        <span className="truncate flex-1">{corFile.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => { setCorFile(null); if (corFileRef.current) corFileRef.current.value = ''; }}
+                          className="text-slate-400 hover:text-slate-700 transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => corFileRef.current?.click()}
+                        className="w-full h-20 flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-slate-300 rounded-lg bg-white hover:bg-slate-50 hover:border-slate-400 transition-colors cursor-pointer"
+                      >
+                        <Upload size={18} className="text-slate-400" />
+                        <span className="text-xs text-slate-500">Click to upload a PDF</span>
+                      </button>
+                    )}
+                    {errors.corFile && <p className="text-[11px] text-red-500">{errors.corFile}</p>}
+                  </div>
+                )}
 
                 {/* Divider */}
                 <div className="flex items-center gap-3 py-0.5">
