@@ -256,8 +256,8 @@ const SignupPage: React.FC = () => {
       </aside>
 
       {/* ── Right form panel ──────────────────────────────────────────── */}
-      <main className="flex-1 flex items-center justify-center bg-slate-50 py-10 px-6 sm:px-12 overflow-y-auto">
-        <div className="w-full max-w-md">
+      <main className="flex-1 bg-slate-50 py-10 px-6 sm:px-12 overflow-y-auto">
+        <div className="w-full max-w-md mx-auto">
           {/* Mobile-only brand header */}
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
             <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
@@ -319,19 +319,19 @@ const SignupPage: React.FC = () => {
                   {errors.role && <p className="text-[11px] text-red-500">{errors.role}</p>}
                 </div>
 
-                {/* ── Row: Full Name + ID Number ── */}
+                {/* ── Row: First Name + Last Name ── */}
                 <div className="grid grid-cols-2 gap-3">
-                  {/* Full Name */}
+                  {/* First Name */}
                   <div className="space-y-1.5">
                     <Label htmlFor="firstName" className="text-xs font-medium text-slate-700">
-                      Full Name
+                      First Name
                     </Label>
                     <div className="relative">
                       <UserRound size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                       <Input
                         id="firstName"
                         type="text"
-                        placeholder="Juan dela Cruz"
+                        placeholder="Juan"
                         value={formData.firstName}
                         onChange={handleInputChange}
                         className="pl-8 h-9 text-sm"
@@ -340,24 +340,43 @@ const SignupPage: React.FC = () => {
                     {errors.firstName && <p className="text-[11px] text-red-500">{errors.firstName}</p>}
                   </div>
 
-                  {/* ID Number */}
+                  {/* Last Name */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="idNumber" className="text-xs font-medium text-slate-700">
-                      {formData.role === 'Student' ? 'Student ID Number' : 'Faculty/Staff ID Number'}
+                    <Label htmlFor="lastName" className="text-xs font-medium text-slate-700">
+                      Last Name
                     </Label>
                     <div className="relative">
-                      <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                      <UserRound size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                       <Input
-                        id="idNumber"
+                        id="lastName"
                         type="text"
-                        placeholder="xx-x-xxxxx"
-                        value={formData.idNumber}
+                        placeholder="Dela Cruz"
+                        value={formData.lastName}
                         onChange={handleInputChange}
                         className="pl-8 h-9 text-sm"
                       />
                     </div>
-                    {errors.idNumber && <p className="text-[11px] text-red-500">{errors.idNumber}</p>}
+                    {errors.lastName && <p className="text-[11px] text-red-500">{errors.lastName}</p>}
                   </div>
+                </div>
+
+                {/* ID Number */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="idNumber" className="text-xs font-medium text-slate-700">
+                    {formData.role === 'Student' ? 'Student ID Number' : 'Faculty/Staff ID Number'}
+                  </Label>
+                  <div className="relative">
+                    <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                    <Input
+                      id="idNumber"
+                      type="text"
+                      placeholder="xx-x-xxxxx"
+                      value={formData.idNumber}
+                      onChange={handleInputChange}
+                      className="pl-8 h-9 text-sm"
+                    />
+                  </div>
+                  {errors.idNumber && <p className="text-[11px] text-red-500">{errors.idNumber}</p>}
                 </div>
 
                 {/* Email */}
