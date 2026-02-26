@@ -38,6 +38,14 @@ export class UsersService {
     return this.prisma.user.update({ where: { id }, data });
   }
 
+  async toggleActive(id: string) {
+    const user = await this.findOne(id);
+    return this.prisma.user.update({
+      where: { id },
+      data: { isActive: !user.isActive },
+    });
+  }
+
   async remove(id: string) {
     await this.findOne(id);
     return this.prisma.user.delete({ where: { id } });
