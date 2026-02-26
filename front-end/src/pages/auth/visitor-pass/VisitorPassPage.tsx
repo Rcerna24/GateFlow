@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Shield, MapPin, QrCode, Megaphone, Users, ClipboardList,
-  Bell, Mail, UserRound, Phone, FileText, Send,
+  Bell, Mail, UserRound, Phone, FileText, Send, Loader2, CheckCircle,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { visitorPassApi } from '@/lib/api';
+import type { ApiError } from '@/types';
 
 const features = [
   {
@@ -51,6 +53,9 @@ interface VisitorFormData {
 const VisitorPassPage: React.FC = () => {
   const navigate = useNavigate();
   const [errors, setErrors] = useState<Partial<VisitorFormData>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const [formData, setFormData] = useState<VisitorFormData>({
     fullName: '',
@@ -91,10 +96,38 @@ const VisitorPassPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      navigate('/login', { state: { message: 'Visitor pass application submitted!' } });
+    setApiError('');
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      const now = new Date();
+      const visitDate = now.toISOString();
+      const timeWindowStart = now.toISOString();
+      const endOfDay = new Date(now);
+      endOfDay.setHours(23, 59, 59, 999);
+      const timeWindowEnd = endOfDay.toISOString();
+
+      await visitorPassApi.create({
+        fullName: formData.fullName,
+        contactNumber: formData.contactNumber,
+        purpose: formData.purposeOfVisit,
+        personToVisit: formData.personToVisit,
+        visitDate,
+        timeWindowStart,
+        timeWindowEnd,
+        email: formData.email || undefined,
+        address: formData.address || undefined,
+      });
+      setIsSuccess(true);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: ApiError } };
+      const msg = axiosErr.response?.data?.message;
+      setApiError(Array.isArray(msg) ? msg.join(', ') : msg || 'Submission failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -327,10 +360,30 @@ const VisitorPassPage: React.FC = () => {
                   and monitored in accordance with VSU campus security policies.
                 </p>
 
+                {/* API Error */}
+                {apiError && (
+                  <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2">
+                    <p className="text-[12px] text-red-600">{apiError}</p>
+                  </div>
+                )}
+
+                {/* Success Message */}
+                {isSuccess && (
+                  <div className="rounded-md bg-green-50 border border-green-200 px-3 py-2.5 flex items-start gap-2">
+                    <CheckCircle size={14} className="text-green-600 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-[12px] font-medium text-green-700">Application Submitted!</p>
+                      <p className="text-[11px] text-green-600 mt-0.5">
+                        Your visitor pass is pending approval. You'll receive your QR code once approved.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Submit */}
-                <Button type="submit" className="w-full h-9 gap-2 text-sm font-medium">
-                  <Send size={14} />
-                  Submit Visitor Pass Application
+                <Button type="submit" disabled={isSubmitting || isSuccess} className="w-full h-9 gap-2 text-sm font-medium">
+                  {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  {isSubmitting ? 'Submitting…' : 'Submit Visitor Pass Application'}
                 </Button>
               </form>
             </CardContent>

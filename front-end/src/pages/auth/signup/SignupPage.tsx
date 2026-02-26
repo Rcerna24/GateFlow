@@ -3,6 +3,7 @@ import {
   Shield, MapPin, QrCode, Megaphone, Users, ClipboardList,
   Bell, Eye, EyeOff, Lock, Mail, UserRound, Phone, Hash,
   BookOpen, UserPlus, ChevronDown, Building, Upload, ImageIcon, FileText, X,
+  Loader2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
+import type { ApiError } from '@/types';
 
 const features = [
   {
@@ -59,9 +62,12 @@ interface FormData {
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState('');
   const [idPicture, setIdPicture] = useState<File | null>(null);
   const [corFile, setCorFile] = useState<File | null>(null);
   const idPictureRef = useRef<HTMLInputElement>(null);
@@ -146,11 +152,28 @@ const SignupPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      // For now, just navigate to login (mock)
-      navigate('/login', { state: { message: 'Account created successfully!' } });
+    setApiError('');
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      await register({
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        role: formData.role.toUpperCase() as 'STUDENT' | 'FACULTY' | 'STAFF',
+        contactNumber: formData.contactNumber || undefined,
+      });
+      navigate('/dashboard');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: ApiError } };
+      const msg = axiosErr.response?.data?.message;
+      setApiError(Array.isArray(msg) ? msg.join(', ') : msg || 'Registration failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -597,10 +620,17 @@ const SignupPage: React.FC = () => {
                   and monitored in accordance with VSU security policies.
                 </p>
 
+                {/* API Error */}
+                {apiError && (
+                  <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2">
+                    <p className="text-[12px] text-red-600">{apiError}</p>
+                  </div>
+                )}
+
                 {/* Submit */}
-                <Button type="submit" className="w-full h-9 gap-2 text-sm font-medium">
-                  <UserPlus size={14} />
-                  Create Account
+                <Button type="submit" disabled={isSubmitting} className="w-full h-9 gap-2 text-sm font-medium">
+                  {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+                  {isSubmitting ? 'Creating Account…' : 'Create Account'}
                 </Button>
               </form>
             </CardContent>

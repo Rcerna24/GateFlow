@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Shield, MapPin, QrCode, Megaphone, Users, ClipboardList,
-  Eye, Lock, Mail, LogIn, Bell, EyeOff,
+  Eye, Lock, Mail, LogIn, Bell, EyeOff, Loader2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import {
   Tooltip, TooltipProvider, TooltipTrigger, TooltipContent,
 } from '@/components/ui/tooltip';
+import { useAuth } from '@/contexts/AuthContext';
+import type { ApiError } from '@/types';
 
 const features = [
   {
@@ -44,10 +46,13 @@ const features = [
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
@@ -59,10 +64,21 @@ const LoginPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
+    setApiError('');
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      await login({ email, password });
       navigate('/dashboard');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: ApiError } };
+      const msg = axiosErr.response?.data?.message;
+      setApiError(Array.isArray(msg) ? msg.join(', ') : msg || 'Login failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -236,10 +252,17 @@ const LoginPage: React.FC = () => {
                         {errors.password && <p className="text-[11px] text-red-500">{errors.password}</p>}
                       </div>
 
+                      {/* API Error */}
+                      {apiError && (
+                        <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2">
+                          <p className="text-[12px] text-red-600">{apiError}</p>
+                        </div>
+                      )}
+
                       {/* Sign in button */}
-                      <Button type="submit" className="w-full h-9 gap-2 text-sm font-medium">
-                        <LogIn size={14} />
-                        Sign In
+                      <Button type="submit" disabled={isSubmitting} className="w-full h-9 gap-2 text-sm font-medium">
+                        {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <LogIn size={14} />}
+                        {isSubmitting ? 'Signing In…' : 'Sign In'}
                       </Button>
                 </form>
               </CardContent>

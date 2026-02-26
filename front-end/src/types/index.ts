@@ -1,0 +1,64 @@
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'ADMIN' | 'GUARD' | 'STUDENT' | 'FACULTY' | 'STAFF';
+  contactNumber: string | null;
+  qrToken: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  user: User;
+}
+
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: 'STUDENT' | 'FACULTY' | 'STAFF';
+  contactNumber?: string;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface VisitorPassPayload {
+  fullName: string;
+  contactNumber: string;
+  purpose: string;
+  personToVisit: string;
+  visitDate: string;
+  timeWindowStart: string;
+  timeWindowEnd: string;
+  email?: string;
+  address?: string;
+}
+
+export interface VisitorPass {
+  id: string;
+  fullName: string;
+  contactNumber: string;
+  purpose: string;
+  personToVisit: string;
+  visitDate: string;
+  timeWindowStart: string;
+  timeWindowEnd: string;
+  qrToken: string | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+  approvedById: string | null;
+  createdAt: string;
+}
+
+export interface ApiError {
+  statusCode: number;
+  message: string | string[];
+  error?: string;
+}
