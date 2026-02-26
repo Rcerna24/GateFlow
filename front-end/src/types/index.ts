@@ -62,3 +62,60 @@ export interface ApiError {
   message: string | string[];
   error?: string;
 }
+
+export interface EntryLog {
+  id: string;
+  userId: string;
+  type: 'ENTRY' | 'EXIT';
+  location: string;
+  guardId: string;
+  timestamp: string;
+  guard?: {
+    firstName: string;
+    lastName: string;
+  };
+}
+
+export type Severity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type IncidentStatus = 'PENDING' | 'RESOLVED';
+
+export interface Incident {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  severity: Severity;
+  status: IncidentStatus;
+  reportedById: string;
+  anonymous: boolean;
+  actionTaken: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+export interface CreateIncidentPayload {
+  title: string;
+  description: string;
+  location: string;
+  severity: Severity;
+  imageUrl?: string;
+  anonymous?: boolean;
+}
+
+export type EmergencyType = 'EARTHQUAKE' | 'FIRE' | 'SECURITY_THREAT' | 'WEATHER_WARNING' | 'CUSTOM';
+
+export interface SOSBroadcast {
+  id: string;
+  type: EmergencyType;
+  message: string;
+  triggeredById: string;
+  isActive: boolean;
+  createdAt: string;
+  closedAt: string | null;
+  triggeredBy?: {
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
+}

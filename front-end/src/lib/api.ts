@@ -6,6 +6,10 @@ import type {
   VisitorPassPayload,
   VisitorPass,
   User,
+  EntryLog,
+  Incident,
+  CreateIncidentPayload,
+  SOSBroadcast,
 } from '@/types';
 
 const api = axios.create({
@@ -74,6 +78,30 @@ export const visitorPassApi = {
 
   reject: (id: string) =>
     api.patch<VisitorPass>(`/visitor-passes/${id}/reject`).then((r) => r.data),
+};
+
+// ─── Entry Logs ──────────────────────────────────────────
+
+export const entryLogsApi = {
+  getMyEntries: () =>
+    api.get<EntryLog[]>('/entry-logs/me').then((r) => r.data),
+};
+
+// ─── Incidents ───────────────────────────────────────────
+
+export const incidentsApi = {
+  create: (data: CreateIncidentPayload) =>
+    api.post<Incident>('/incidents', data).then((r) => r.data),
+
+  getMyIncidents: () =>
+    api.get<Incident[]>('/incidents/me').then((r) => r.data),
+};
+
+// ─── SOS Broadcasts ──────────────────────────────────────
+
+export const sosApi = {
+  getActive: () =>
+    api.get<SOSBroadcast[]>('/sos/active').then((r) => r.data),
 };
 
 export default api;
