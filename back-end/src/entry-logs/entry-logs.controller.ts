@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EntryLogsService } from './entry-logs.service';
@@ -13,5 +13,13 @@ export class EntryLogsController {
   @Get('me')
   getMyEntries(@Request() req: { user: { id: string } }) {
     return this.entryLogsService.findByUser(req.user.id);
+  }
+
+  /** Admin – get all entry logs with optional filters */
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get()
+  findAll(@Query('take') take?: string) {
+    return this.entryLogsService.findAll(take ? parseInt(take, 10) : 50);
   }
 }

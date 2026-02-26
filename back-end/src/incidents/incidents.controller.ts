@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { IncidentsService } from './incidents.service';
@@ -24,5 +24,24 @@ export class IncidentsController {
   @Get('me')
   getMyIncidents(@Request() req: { user: { id: string } }) {
     return this.incidentsService.findByUser(req.user.id);
+  }
+
+  /** Admin – list all incidents */
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get()
+  findAll() {
+    return this.incidentsService.findAll();
+  }
+
+  /** Admin / Guard – resolve an incident */
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Patch(':id/resolve')
+  resolve(
+    @Param('id') id: string,
+    @Body() body: { actionTaken: string },
+  ) {
+    return this.incidentsService.resolve(id, body.actionTaken);
   }
 }

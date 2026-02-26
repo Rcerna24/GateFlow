@@ -17,4 +17,19 @@ export class EntryLogsService {
       },
     });
   }
+
+  async findAll(take = 50) {
+    return this.prisma.entryLog.findMany({
+      orderBy: { timestamp: 'desc' },
+      take,
+      include: {
+        user: {
+          select: { firstName: true, lastName: true, role: true, email: true },
+        },
+        guard: {
+          select: { firstName: true, lastName: true },
+        },
+      },
+    });
+  }
 }

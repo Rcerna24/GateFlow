@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 
@@ -24,6 +24,30 @@ export class IncidentsService {
     return this.prisma.incident.findMany({
       where: { reportedById: userId },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findAll() {
+    return this.prisma.incident.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        reportedBy: {
+          select: { firstName: true, lastName: true, role: true },
+        },
+      },
+    });
+  }
+
+  async resolve(id: string, actionTaken: string) {
+    const incident = await this.prisma.incident.findUnique({ where: { id } });
+    if (!incident) throw new NotFoundException(`Incident ${id} not found`);
+    return this.prisma.incident.update({
+      where: { id },
+      data: {
+        status: 'RESOLVED',
+        actionTaken,
+        resolvedAt: new Date(),
+      },
     });
   }
 }
