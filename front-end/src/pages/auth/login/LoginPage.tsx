@@ -171,7 +171,7 @@ const LoginPage: React.FC = () => {
               </div>
               <div>
                 <p className="font-bold text-[14px] text-slate-900 leading-none">GateFlow</p>
-                <p className="text-slate-400 text-[10px] uppercase tracking-widest mt-0.5">Campus Portal</p>
+                <p className="text-slate-400 text-[10px] uppercase tracking-widest mt-0.5">Smart Security System</p>
               </div>
             </div>
 
