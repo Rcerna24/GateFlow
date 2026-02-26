@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  GUARD
+  STUDENT
+  FACULTY
+  STAFF
+}
+
+enum EntryType {
+  ENTRY
+  EXIT
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  PENDING
+  RESOLVED
+}
+
+enum VisitorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum EmergencyType {
+  EARTHQUAKE
+  FIRE
+  SECURITY_THREAT
+  WEATHER_WARNING
+  CUSTOM
+}
+
+// ─── Models ──────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          Role
+  contactNumber String?
+  qrToken       String   @unique @default(uuid())
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  entryLogs         EntryLog[]     @relation("UserEntries")
+  scannedEntries    EntryLog[]     @relation("GuardScans")
+  reportedIncidents Incident[]     @relation("ReportedIncidents")
+  approvedVisitors  VisitorPass[]  @relation("ApprovedVisitors")
+  triggeredSOS      SOSBroadcast[] @relation("TriggeredSOS")
+
+  @@map("users")
+}
+
+model EntryLog {
+  id        String    @id @default(uuid())
+  userId    String
+  type      EntryType
+  location  String
+  guardId   String
+  timestamp DateTime  @default(now())
+
+  // Relations
+  user  User @relation("UserEntries", fields: [userId], references: [id])
+  guard User @relation("GuardScans", fields: [guardId], references: [id])
+
+  @@map("entry_logs")
+}
+
+model Incident {
+  id           String         @id @default(uuid())
+  title        String
+  description  String
+  location     String
+  severity     Severity
+  status       IncidentStatus @default(PENDING)
+  reportedById String
+  actionTaken  String?
+  imageUrl     String?
+  createdAt    DateTime       @default(now())
+  resolvedAt   DateTime?
+
+  // Relations
+  reportedBy User @relation("ReportedIncidents", fields: [reportedById], references: [id])
+
+  @@map("incidents")
+}
+
+model VisitorPass {
+  id              String        @id @default(uuid())
+  fullName        String
+  contactNumber   String
+  purpose         String
+  personToVisit   String
+  visitDate       DateTime
+  timeWindowStart DateTime
+  timeWindowEnd   DateTime
+  qrToken         String?       @unique
+  status          VisitorStatus @default(PENDING)
+  approvedById    String?
+  createdAt       DateTime      @default(now())
+
+  // Relations
+  approvedBy User? @relation("ApprovedVisitors", fields: [approvedById], references: [id])
+
+  @@map("visitor_passes")
+}
+
+model SOSBroadcast {
+  id            String        @id @default(uuid())
+  type          EmergencyType
+  message       String
+  triggeredById String
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  closedAt      DateTime?
+
+  // Relations
+  triggeredBy User @relation("TriggeredSOS", fields: [triggeredById], references: [id])
+
+  @@map("sos_broadcasts")
+}
