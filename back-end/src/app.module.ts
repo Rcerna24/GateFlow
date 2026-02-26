@@ -5,6 +5,9 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { VisitorPassModule } from './visitor-pass/visitor-pass.module';
 import { MailModule } from './mail/mail.module';
+import { EntryLogsModule } from './entry-logs/entry-logs.module';
+import { IncidentsModule } from './incidents/incidents.module';
+import { SosModule } from './sos/sos.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -15,6 +18,9 @@ import { AppController } from './app.controller';
     UsersModule,
     AuthModule,
     VisitorPassModule,
+    EntryLogsModule,
+    IncidentsModule,
+    SosModule,
   ],
   controllers: [AppController],
 })
