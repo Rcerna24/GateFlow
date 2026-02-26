@@ -8,6 +8,7 @@ import { MailModule } from './mail/mail.module';
 import { EntryLogsModule } from './entry-logs/entry-logs.module';
 import { IncidentsModule } from './incidents/incidents.module';
 import { SosModule } from './sos/sos.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -21,6 +22,7 @@ import { AppController } from './app.controller';
     EntryLogsModule,
     IncidentsModule,
     SosModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
 })
