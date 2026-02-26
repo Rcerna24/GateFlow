@@ -213,19 +213,13 @@ const LoginPage: React.FC = () => {
                           <Label htmlFor="password" className="text-xs font-medium text-slate-700">
                             Password
                           </Label>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                type="button"
-                                className="text-[11px] text-slate-500 hover:text-slate-700 transition-colors"
-                              >
-                                Forgot password?
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                              Contact GateFlow Support for password recovery
-                            </TooltipContent>
-                          </Tooltip>
+                          <button
+                            type="button"
+                            onClick={() => navigate('/forgot-password')}
+                            className="text-[11px] text-slate-500 hover:text-slate-700 transition-colors"
+                          >
+                            Forgot password?
+                          </button>
                         </div>
                         <div className="relative">
                           <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />

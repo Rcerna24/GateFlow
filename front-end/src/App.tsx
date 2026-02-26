@@ -4,6 +4,8 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import LoginPage from './pages/auth/login/LoginPage';
 import SignupPage from './pages/auth/signup/SignupPage';
 import VisitorPassPage from './pages/auth/visitor-pass/VisitorPassPage';
+import ForgotPasswordPage from './pages/auth/forgot-password/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/reset-password/ResetPasswordPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 
 function App() {
@@ -15,6 +17,8 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/visitor-pass" element={<VisitorPassPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
 
           {/* Protected routes */}

@@ -30,7 +30,7 @@ api.interceptors.response.use(
       localStorage.removeItem('gateflow_token');
       localStorage.removeItem('gateflow_user');
       // Only redirect if not already on a public page
-      const publicPaths = ['/login', '/signup', '/visitor-pass'];
+      const publicPaths = ['/login', '/signup', '/visitor-pass', '/forgot-password', '/reset-password'];
       if (!publicPaths.includes(window.location.pathname)) {
         window.location.href = '/login';
       }
@@ -49,6 +49,12 @@ export const authApi = {
     api.post<AuthResponse>('/auth/login', data).then((r) => r.data),
 
   me: () => api.get<User>('/auth/me').then((r) => r.data),
+
+  forgotPassword: (email: string) =>
+    api.post<{ message: string; resetToken?: string; resetLink?: string }>('/auth/forgot-password', { email }).then((r) => r.data),
+
+  resetPassword: (token: string, newPassword: string) =>
+    api.post<{ message: string }>('/auth/reset-password', { token, newPassword }).then((r) => r.data),
 };
 
 // ─── Visitor Passes ──────────────────────────────────────
