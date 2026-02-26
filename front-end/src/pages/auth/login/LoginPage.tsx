@@ -72,7 +72,12 @@ const LoginPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       await login({ email, password });
-      navigate('/dashboard');
+      // Role-based redirect
+      const stored = localStorage.getItem('gateflow_user');
+      const role = stored ? JSON.parse(stored).role : null;
+      if (role === 'ADMIN') navigate('/admin-dashboard');
+      else if (role === 'FACULTY' || role === 'STAFF') navigate('/faculty-dashboard');
+      else navigate('/dashboard');
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: ApiError; status?: number }; request?: unknown; message?: string };
 

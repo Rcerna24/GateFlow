@@ -168,6 +168,7 @@ const SignupPage: React.FC = () => {
         contactNumber: formData.contactNumber || undefined,
       });
       navigate('/dashboard');
+      // Note: signup is only for STUDENT/FACULTY/STAFF so no admin redirect needed
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: ApiError; status?: number }; request?: unknown; message?: string };
 

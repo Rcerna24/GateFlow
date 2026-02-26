@@ -8,6 +8,7 @@ import ForgotPasswordPage from './pages/auth/forgot-password/ForgotPasswordPage'
 import ResetPasswordPage from './pages/auth/reset-password/ResetPasswordPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import FacultyDashboardPage from './pages/dashboard/FacultyDashboardPage';
+import AdminDashboardPage from './pages/dashboard/AdminDashboardPage';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/faculty-dashboard" element={<FacultyDashboardPage />} />
+            <Route path="/admin-dashboard" element={<AdminDashboardPage />} />
           </Route>
         </Routes>
       </AuthProvider>
