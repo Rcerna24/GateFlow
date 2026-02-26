@@ -119,3 +119,42 @@ export interface SOSBroadcast {
     role: string;
   };
 }
+
+// ─── Admin types ─────────────────────────────────────────
+
+export interface AnalyticsOverview {
+  totalUsers: number;
+  totalStudents: number;
+  totalFaculty: number;
+  totalStaff: number;
+  totalGuards: number;
+  entriesToday: number;
+  totalEntryLogs: number;
+  pendingIncidents: number;
+  resolvedIncidents: number;
+  pendingVisitors: number;
+  approvedVisitors: number;
+  activeSos: number;
+}
+
+export interface AdminEntryLog extends EntryLog {
+  user?: {
+    firstName: string;
+    lastName: string;
+    role: string;
+    email: string;
+  };
+}
+
+export interface AdminIncident extends Incident {
+  reportedBy?: {
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
+}
+
+export interface CreateSOSPayload {
+  type: EmergencyType;
+  message: string;
+}

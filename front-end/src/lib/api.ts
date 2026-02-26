@@ -10,6 +10,10 @@ import type {
   Incident,
   CreateIncidentPayload,
   SOSBroadcast,
+  AnalyticsOverview,
+  AdminEntryLog,
+  AdminIncident,
+  CreateSOSPayload,
 } from '@/types';
 
 const api = axios.create({
@@ -102,6 +106,46 @@ export const incidentsApi = {
 export const sosApi = {
   getActive: () =>
     api.get<SOSBroadcast[]>('/sos/active').then((r) => r.data),
+
+  getAll: () =>
+    api.get<SOSBroadcast[]>('/sos').then((r) => r.data),
+
+  create: (data: CreateSOSPayload) =>
+    api.post<SOSBroadcast>('/sos', data).then((r) => r.data),
+
+  close: (id: string) =>
+    api.patch<SOSBroadcast>(`/sos/${id}/close`).then((r) => r.data),
+};
+
+// ─── Admin ───────────────────────────────────────────────
+
+export const analyticsApi = {
+  getOverview: () =>
+    api.get<AnalyticsOverview>('/analytics/overview').then((r) => r.data),
+};
+
+export const adminUsersApi = {
+  getAll: () =>
+    api.get<User[]>('/users').then((r) => r.data),
+
+  toggleActive: (id: string) =>
+    api.patch<User>(`/users/${id}/toggle-active`).then((r) => r.data),
+
+  remove: (id: string) =>
+    api.delete(`/users/${id}`).then((r) => r.data),
+};
+
+export const adminEntryLogsApi = {
+  getAll: (take = 50) =>
+    api.get<AdminEntryLog[]>(`/entry-logs?take=${take}`).then((r) => r.data),
+};
+
+export const adminIncidentsApi = {
+  getAll: () =>
+    api.get<AdminIncident[]>('/incidents').then((r) => r.data),
+
+  resolve: (id: string, actionTaken: string) =>
+    api.patch<AdminIncident>(`/incidents/${id}/resolve`, { actionTaken }).then((r) => r.data),
 };
 
 export default api;
