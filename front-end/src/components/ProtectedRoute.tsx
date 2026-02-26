@@ -21,7 +21,11 @@ export default function ProtectedRoute({ allowedRoles }: Props) {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
+    const dest =
+      user.role === 'GUARD' ? '/guard-dashboard'
+      : (user.role === 'FACULTY' || user.role === 'STAFF') ? '/faculty-dashboard'
+      : '/dashboard';
+    return <Navigate to={dest} replace />;
   }
 
   return <Outlet />;

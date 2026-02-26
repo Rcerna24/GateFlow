@@ -159,7 +159,7 @@ const SignupPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await register({
+      const res = await register({
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName,
@@ -167,7 +167,12 @@ const SignupPage: React.FC = () => {
         role: formData.role.toUpperCase() as 'STUDENT' | 'FACULTY' | 'STAFF',
         contactNumber: formData.contactNumber || undefined,
       });
-      navigate('/dashboard');
+      const userRole = res?.user?.role ?? formData.role.toUpperCase();
+      const dest =
+        userRole === 'GUARD' ? '/guard-dashboard'
+        : (userRole === 'FACULTY' || userRole === 'STAFF') ? '/faculty-dashboard'
+        : '/dashboard';
+      navigate(dest);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: ApiError; status?: number }; request?: unknown; message?: string };
 

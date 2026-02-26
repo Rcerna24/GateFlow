@@ -71,8 +71,13 @@ const LoginPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await login({ email, password });
-      navigate('/dashboard');
+      const res = await login({ email, password });
+      const role = res?.user?.role ?? '';
+      const dest =
+        role === 'GUARD' ? '/guard-dashboard'
+        : (role === 'FACULTY' || role === 'STAFF') ? '/faculty-dashboard'
+        : '/dashboard';
+      navigate(dest);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: ApiError; status?: number }; request?: unknown; message?: string };
 
