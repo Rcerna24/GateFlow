@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -18,6 +19,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
+    private readonly mail: MailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -111,13 +113,24 @@ export class AuthService {
       },
     });
 
-    // In production, send an email here.
-    // For the hackathon demo, return the token in the response.
+    // Try to send the reset email; fall back to returning the link directly
+    let emailSent = false;
+    try {
+      await this.mail.sendPasswordResetEmail(user.email, resetToken);
+      emailSent = true;
+    } catch {
+      // SMTP not configured or failed — fall back to direct link
+    }
+
+    const frontendUrl = 'http://localhost:5176';
     return {
-      message: 'If that email is registered, a reset link has been sent.',
-      // DEV ONLY — remove in production
-      resetToken,
-      resetLink: `/reset-password?token=${resetToken}`,
+      message: emailSent
+        ? 'A password reset link has been sent to your email.'
+        : 'Email delivery unavailable. Use the link below to reset your password.',
+      ...(!emailSent && {
+        resetToken,
+        resetLink: `${frontendUrl}/reset-password?token=${resetToken}`,
+      }),
     };
   }
 

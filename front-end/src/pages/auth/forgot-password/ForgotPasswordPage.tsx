@@ -15,7 +15,7 @@ const ForgotPasswordPage: React.FC = () => {
   const [error, setError] = useState('');
   const [apiError, setApiError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [resetLink, setResetLink] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,8 +35,7 @@ const ForgotPasswordPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const res = await authApi.forgotPassword(email);
-      setIsSuccess(true);
-      // DEV: capture reset link for demo purposes
+      setSuccessMessage(res.message);
       if (res.resetLink) {
         setResetLink(res.resetLink);
       }
@@ -72,24 +71,24 @@ const ForgotPasswordPage: React.FC = () => {
 
         <Card className="border-0 shadow-xl shadow-slate-200/80 rounded-2xl overflow-hidden">
           <CardContent className="px-5 pt-6 pb-5 space-y-4">
-            {isSuccess ? (
+            {successMessage ? (
               <div className="py-4 space-y-4">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center">
                     <CheckCircle size={18} className="text-emerald-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">Check your email</p>
+                    <p className="text-sm font-semibold text-slate-900">Request submitted</p>
                     <p className="text-xs text-slate-500">
-                      If that email is registered, a reset link has been sent.
+                      {successMessage}
                     </p>
                   </div>
                 </div>
 
-                {/* DEV ONLY — shows the reset link for hackathon demo */}
+                {/* Fallback when SMTP is unavailable — shows direct reset link */}
                 {resetLink && (
                   <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2.5 space-y-1.5">
-                    <p className="text-[11px] font-medium text-amber-700">Demo Mode — Reset Link</p>
+                    <p className="text-[11px] font-medium text-amber-700">Direct Reset Link</p>
                     <button
                       type="button"
                       onClick={() => navigate(resetLink)}
