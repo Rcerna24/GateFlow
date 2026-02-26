@@ -1,6 +1,8 @@
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
+  Logger,
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
@@ -16,6 +18,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -24,9 +28,17 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     // Check for existing user
-    const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-    });
+    let existing;
+    try {
+      existing = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+    } catch (err) {
+      this.logger.error('Database error while checking for existing user', err);
+      throw new InternalServerErrorException(
+        'Unable to connect to the database. Please try again later.',
+      );
+    }
     if (existing) {
       throw new ConflictException('Email is already registered');
     }
@@ -35,16 +47,28 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.password, 12);
 
     // Create user
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hashedPassword,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        role: dto.role,
-        contactNumber: dto.contactNumber,
-      },
-    });
+    let user;
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hashedPassword,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          role: dto.role,
+          contactNumber: dto.contactNumber,
+        },
+      });
+    } catch (err: any) {
+      this.logger.error('Database error while creating user', err);
+      // Prisma unique constraint violation (race condition)
+      if (err?.code === 'P2002') {
+        throw new ConflictException('Email is already registered');
+      }
+      throw new InternalServerErrorException(
+        'Could not create account. The database may be unavailable — please try again later.',
+      );
+    }
 
     // Return token
     const token = this.signToken(user.id, user.email, user.role);

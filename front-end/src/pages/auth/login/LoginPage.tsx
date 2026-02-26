@@ -74,9 +74,35 @@ const LoginPage: React.FC = () => {
       await login({ email, password });
       navigate('/dashboard');
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: ApiError } };
-      const msg = axiosErr.response?.data?.message;
-      setApiError(Array.isArray(msg) ? msg.join(', ') : msg || 'Login failed. Please try again.');
+      const axiosErr = err as { response?: { data?: ApiError; status?: number }; request?: unknown; message?: string };
+
+      if (!axiosErr.response) {
+        setApiError(
+          axiosErr.request
+            ? 'Cannot reach the server. Please make sure the backend is running and try again.'
+            : `Unexpected error: ${axiosErr.message ?? 'unknown'}`,
+        );
+      } else {
+        const { status, data } = axiosErr.response;
+        const msg = data?.message;
+        const joined = Array.isArray(msg) ? msg.join(', ') : msg;
+
+        switch (status) {
+          case 401:
+            setApiError(joined || 'Invalid email or password.');
+            break;
+          case 400:
+            setApiError(joined || 'Validation failed. Please check your inputs.');
+            break;
+          case 500:
+            setApiError('Internal server error. The database may be unreachable — please try again later.');
+            break;
+          default:
+            setApiError(joined || `Login failed (HTTP ${status}). Please try again.`);
+        }
+      }
+
+      console.error('[LoginPage] Login error:', err);
     } finally {
       setIsSubmitting(false);
     }

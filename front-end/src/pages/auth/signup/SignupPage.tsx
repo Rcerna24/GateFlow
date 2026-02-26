@@ -169,9 +169,39 @@ const SignupPage: React.FC = () => {
       });
       navigate('/dashboard');
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: ApiError } };
-      const msg = axiosErr.response?.data?.message;
-      setApiError(Array.isArray(msg) ? msg.join(', ') : msg || 'Registration failed. Please try again.');
+      const axiosErr = err as { response?: { data?: ApiError; status?: number }; request?: unknown; message?: string };
+
+      // No response at all → network / server unreachable
+      if (!axiosErr.response) {
+        setApiError(
+          axiosErr.request
+            ? 'Cannot reach the server. Please make sure the backend is running and try again.'
+            : `Unexpected error: ${axiosErr.message ?? 'unknown'}`,
+        );
+      } else {
+        const { status, data } = axiosErr.response;
+        const msg = data?.message;
+        const joined = Array.isArray(msg) ? msg.join(', ') : msg;
+
+        switch (status) {
+          case 400:
+            setApiError(joined || 'Validation failed. Please check your inputs and try again.');
+            break;
+          case 409:
+            setApiError(joined || 'This email is already registered. Try logging in instead.');
+            break;
+          case 422:
+            setApiError(joined || 'The server could not process your request. Check your form data.');
+            break;
+          case 500:
+            setApiError('Internal server error. The database may be unreachable — please try again later.');
+            break;
+          default:
+            setApiError(joined || `Registration failed (HTTP ${status}). Please try again.`);
+        }
+      }
+
+      console.error('[SignupPage] Registration error:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -641,8 +671,9 @@ const SignupPage: React.FC = () => {
 
                 {/* API Error */}
                 {apiError && (
-                  <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2">
-                    <p className="text-[12px] text-red-600">{apiError}</p>
+                  <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2.5 flex items-start gap-2">
+                    <Shield size={14} className="text-red-500 mt-0.5 shrink-0" />
+                    <p className="text-[12px] text-red-600 leading-relaxed">{apiError}</p>
                   </div>
                 )}
 
