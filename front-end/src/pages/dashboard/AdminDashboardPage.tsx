@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import {
-  Shield,
-  LogOut,
   Users,
   Activity,
   AlertTriangle,
@@ -29,6 +27,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import DashboardLayout from '@/components/DashboardLayout';
+import {
+  severityTone,
+  statusTone,
+  roleTone,
+  visitorStatusTone,
+  formatDateTime,
+  formatDate,
+} from '@/lib/constants';
 import {
   analyticsApi,
   adminUsersApi,
@@ -47,40 +54,11 @@ import type {
   EmergencyType,
 } from '@/types';
 
-/* ─── Style maps ──────────────────────────────────────── */
-const severityTone: Record<string, string> = {
-  LOW: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
-  MEDIUM: 'bg-amber-50 text-amber-700 border border-amber-100',
-  HIGH: 'bg-orange-50 text-orange-700 border border-orange-100',
-  CRITICAL: 'bg-red-50 text-red-700 border border-red-100',
-};
-
-const statusTone: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-800',
-  RESOLVED: 'bg-emerald-100 text-emerald-700',
-};
-
-const roleTone: Record<string, string> = {
-  ADMIN: 'bg-purple-50 text-purple-700 border border-purple-200',
-  GUARD: 'bg-blue-50 text-blue-700 border border-blue-200',
-  STUDENT: 'bg-slate-50 text-slate-700 border border-slate-200',
-  FACULTY: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
-  STAFF: 'bg-teal-50 text-teal-700 border border-teal-200',
-};
-
-const visitorStatusTone: Record<string, string> = {
-  PENDING: 'bg-amber-100 text-amber-800',
-  APPROVED: 'bg-emerald-100 text-emerald-700',
-  REJECTED: 'bg-red-100 text-red-700',
-  EXPIRED: 'bg-slate-100 text-slate-600',
-};
-
 /* ─── Tab type ────────────────────────────────────────── */
 type Tab = 'overview' | 'users' | 'logs' | 'incidents' | 'visitors' | 'sos';
 
 export default function AdminDashboardPage() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   /* ─── Active tab ─────────────────────────────────────── */
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -94,8 +72,6 @@ export default function AdminDashboardPage() {
   const [sosBroadcasts, setSosBroadcasts] = useState<SOSBroadcast[]>([]);
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   /* ─── Filters ────────────────────────────────────────── */
   const [userSearch, setUserSearch] = useState('');
@@ -125,7 +101,6 @@ export default function AdminDashboardPage() {
   const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    setError(null);
     try {
       const [analyticsRes, usersRes, logsRes, incRes, vpRes, sosRes] = await Promise.all([
         analyticsApi.getOverview(),
@@ -142,7 +117,7 @@ export default function AdminDashboardPage() {
       setVisitors(vpRes ?? []);
       setSosBroadcasts(sosRes ?? []);
     } catch {
-      setError('Unable to load admin dashboard data.');
+      toast.error('Unable to load admin dashboard data.');
     } finally {
       setLoading(false);
     }
@@ -150,100 +125,89 @@ export default function AdminDashboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  /* ─── Helpers ────────────────────────────────────────── */
-  const handleLogout = () => { logout(); navigate('/login'); };
-  const clearMessages = () => { setError(null); setSuccess(null); };
-
   /* ─── User management ───────────────────────────────── */
   const handleToggleActive = async (id: string) => {
-    clearMessages();
     try {
       const updated = await adminUsersApi.toggleActive(id);
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
-      setSuccess(`User ${updated.isActive ? 'activated' : 'deactivated'} successfully.`);
+      toast.success(`User ${updated.isActive ? 'activated' : 'deactivated'} successfully.`);
     } catch {
-      setError('Failed to update user status.');
+      toast.error('Failed to update user status.');
     }
   };
 
   const handleDeleteUser = async (id: string) => {
-    clearMessages();
-    if (!confirm('Are you sure you want to delete this user? This cannot be undone.')) return;
+    if (!window.confirm('Are you sure you want to delete this user? This cannot be undone.')) return;
     try {
       await adminUsersApi.remove(id);
       setUsers((prev) => prev.filter((u) => u.id !== id));
-      setSuccess('User deleted successfully.');
+      toast.success('User deleted successfully.');
     } catch {
-      setError('Failed to delete user.');
+      toast.error('Failed to delete user.');
     }
   };
 
   /* ─── Incident resolve ──────────────────────────────── */
   const handleResolve = async (id: string) => {
     if (!actionTaken.trim()) return;
-    clearMessages();
     try {
       const updated = await adminIncidentsApi.resolve(id, actionTaken.trim());
       setIncidents((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
       setResolvingId(null);
       setActionTaken('');
-      setSuccess('Incident resolved.');
+      toast.success('Incident resolved.');
     } catch {
-      setError('Failed to resolve incident.');
+      toast.error('Failed to resolve incident.');
     }
   };
 
   /* ─── Visitor approve / reject ──────────────────────── */
   const handleApproveVisitor = async (id: string) => {
-    clearMessages();
     try {
       const updated = await visitorPassApi.approve(id);
       setVisitors((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
-      setSuccess('Visitor pass approved.');
+      toast.success('Visitor pass approved.');
     } catch {
-      setError('Failed to approve visitor pass.');
+      toast.error('Failed to approve visitor pass.');
     }
   };
 
   const handleRejectVisitor = async (id: string) => {
-    clearMessages();
     try {
       const updated = await visitorPassApi.reject(id);
       setVisitors((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
-      setSuccess('Visitor pass rejected.');
+      toast.success('Visitor pass rejected.');
     } catch {
-      setError('Failed to reject visitor pass.');
+      toast.error('Failed to reject visitor pass.');
     }
   };
 
   /* ─── SOS management ────────────────────────────────── */
   const handleCreateSos = async () => {
     if (!sosMessage.trim()) return;
-    clearMessages();
     setCreatingSos(true);
     try {
       const created = await sosApi.create({ type: sosType, message: sosMessage.trim() });
       setSosBroadcasts((prev) => [created, ...prev]);
       setSosMessage('');
       setShowSosForm(false);
-      setSuccess('SOS broadcast created.');
+      toast.success('SOS broadcast created.');
       if (analytics) setAnalytics({ ...analytics, activeSos: analytics.activeSos + 1 });
     } catch {
-      setError('Failed to create SOS broadcast.');
+      toast.error('Failed to create SOS broadcast.');
     } finally {
       setCreatingSos(false);
     }
   };
 
   const handleCloseSos = async (id: string) => {
-    clearMessages();
     try {
       const updated = await sosApi.close(id);
       setSosBroadcasts((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-      setSuccess('SOS broadcast deactivated.');
+      toast.success('SOS broadcast deactivated.');
       if (analytics) setAnalytics({ ...analytics, activeSos: Math.max(0, analytics.activeSos - 1) });
     } catch {
-      setError('Failed to close SOS broadcast.');
+      toast.error('Failed to close SOS broadcast.');
     }
   };
 
@@ -306,57 +270,23 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* ── Header ────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 h-14">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-md bg-slate-900 flex items-center justify-center">
-              <Shield size={16} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-sm font-semibold text-slate-900 leading-none">GateFlow</h1>
-              <p className="text-[11px] text-slate-500">Admin Control Panel</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {activeSosList.length > 0 && (
-              <Badge className="bg-red-600 text-white animate-pulse text-xs gap-1">
-                <Radio size={12} />
-                {activeSosList.length} Active SOS
-              </Badge>
-            )}
-            <span className="text-xs text-slate-500 hidden sm:inline">
-              {user?.firstName} {user?.lastName}
-            </span>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-1.5 text-xs text-slate-600">
-              <LogOut size={14} />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-6 space-y-5">
-        {/* ── Alerts ───────────────────────────────────── */}
-        {error && (
-          <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-4 py-2">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-4 py-2 flex items-center gap-2">
-            <CheckCircle2 size={14} /> {success}
-          </div>
-        )}
-
+    <DashboardLayout
+      subtitle="Admin Control Panel"
+      headerExtra={
+        activeSosList.length > 0 ? (
+          <Badge className="bg-red-600 text-white animate-pulse text-xs gap-1">
+            <Radio size={12} />
+            {activeSosList.length} Active SOS
+          </Badge>
+        ) : undefined
+      }
+    >
         {/* ── Tab navigation ──────────────────────────── */}
         <div className="flex gap-1 bg-white border border-slate-200 rounded-lg p-1 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => { setActiveTab(tab.key); clearMessages(); }}
+              onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                 activeTab === tab.key
                   ? 'bg-slate-900 text-white'
@@ -446,9 +376,7 @@ export default function AdminDashboardPage() {
                         </Badge>
                       </div>
                       <span className="text-xs text-slate-400">
-                        {new Date(log.timestamp).toLocaleString('en-US', {
-                          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                        })}
+                        {formatDateTime(log.timestamp)}
                       </span>
                     </div>
                   ))}
@@ -523,9 +451,7 @@ export default function AdminDashboardPage() {
                             </Badge>
                           </td>
                           <td className="px-4 py-2.5 text-xs text-slate-400">
-                            {new Date(u.createdAt).toLocaleDateString('en-US', {
-                              month: 'short', day: 'numeric', year: 'numeric',
-                            })}
+                            {formatDate(u.createdAt)}
                           </td>
                           <td className="px-4 py-2.5 text-right space-x-1">
                             <Button
@@ -608,9 +534,7 @@ export default function AdminDashboardPage() {
                           {log.guard?.firstName} {log.guard?.lastName}
                         </td>
                         <td className="px-4 py-2.5 text-xs text-slate-400">
-                          {new Date(log.timestamp).toLocaleString('en-US', {
-                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                          })}
+                          {formatDateTime(log.timestamp)}
                         </td>
                       </tr>
                     ))}
@@ -660,9 +584,7 @@ export default function AdminDashboardPage() {
                           </span>
                           <span className="flex items-center gap-1">
                             <CalendarDays size={11} />
-                            {new Date(incident.createdAt).toLocaleString('en-US', {
-                              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                            })}
+                            {formatDateTime(incident.createdAt)}
                           </span>
                           {incident.reportedBy && !incident.anonymous && (
                             <span>
@@ -778,9 +700,7 @@ export default function AdminDashboardPage() {
                         <td className="px-4 py-2.5 text-slate-600">{v.purpose}</td>
                         <td className="px-4 py-2.5 text-slate-600">{v.personToVisit}</td>
                         <td className="px-4 py-2.5 text-xs text-slate-400">
-                          {new Date(v.visitDate).toLocaleDateString('en-US', {
-                            month: 'short', day: 'numeric', year: 'numeric',
-                          })}
+                          {formatDate(v.visitDate)}
                         </td>
                         <td className="px-4 py-2.5">
                           <Badge variant="secondary" className={visitorStatusTone[v.status]}>{v.status}</Badge>
@@ -838,9 +758,7 @@ export default function AdminDashboardPage() {
                       <p className="text-sm text-slate-800 mt-0.5">{sos.message}</p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
                         By {sos.triggeredBy?.firstName} {sos.triggeredBy?.lastName} &middot;{' '}
-                        {new Date(sos.createdAt).toLocaleString('en-US', {
-                          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                        })}
+                        {formatDateTime(sos.createdAt)}
                       </p>
                     </div>
                     <Button
@@ -941,13 +859,9 @@ export default function AdminDashboardPage() {
                       <p className="text-xs text-slate-700 mt-1">{sos.message}</p>
                       <p className="text-[11px] text-slate-400 mt-0.5">
                         {sos.triggeredBy?.firstName} {sos.triggeredBy?.lastName} &middot;{' '}
-                        {new Date(sos.createdAt).toLocaleString('en-US', {
-                          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                        })}
+                        {formatDateTime(sos.createdAt)}
                         {sos.closedAt && (
-                          <> &middot; Closed {new Date(sos.closedAt).toLocaleString('en-US', {
-                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                          })}</>
+                          <> &middot; Closed {formatDateTime(sos.closedAt)}</>
                         )}
                       </p>
                     </div>
@@ -970,8 +884,7 @@ export default function AdminDashboardPage() {
             </Card>
           </div>
         )}
-      </main>
-    </div>
+    </DashboardLayout>
   );
 }
 
