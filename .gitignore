@@ -4,6 +4,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.npmrc
 
 # Build outputs
 dist/
@@ -14,88 +15,34 @@ build/
 
 # Vite
 .vite/
+.cache/
 *.tsbuildinfo
 
 # Environment & local config
 .env
 .env.*
 !.env.example
-.DS_Store
-Thumbs.db
 
 # Logs & coverage
 logs/
 *.log
 coverage/
 lcov.info
+pids/
+*.pid
+*.seed
 
 # Prisma
 prisma/migrations/**/steps.json
 prisma/migrations/**/migration.sql
 prisma/dev.db*
 prisma/*.db-journal
+.prisma/
 
-# Editor/OS
+# Editor / OS
 .idea/
 .vscode/
 *.swp
 *.swo
-
-# Front-end
-front-end/.eslintcache
-front-end/.vite/
-front-end/.cache/
-front-end/dist/
-
-# Back-end
-back-end/dist/
-back-end/.env
-back-end/.env.*
-# Core node
-node_modules/
-.npmrc
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
-
-# Build outputs
-back-end/dist/
-front-end/dist/
-
-# TypeScript
-*.tsbuildinfo
-
-# Logs and coverage
-*.log
-logs/
-pids/
-*.pid
-*.seed
-coverage/
-
-# Env and secrets
-.env
-.env.*
-!.env.example
-.prisma/
-
-# OS / Editor
 .DS_Store
 Thumbs.db
-.idea/
-.vscode/
-*.swp
-
-# Prisma
-back-end/prisma/dev.db
-back-end/prisma/dev.db-journal
-
-# Misc tools
-.next/
-.cache/
-.vite/
-turbo/
