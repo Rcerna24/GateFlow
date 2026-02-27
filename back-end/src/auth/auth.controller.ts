@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards, Request } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, UseGuards, Request } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -27,6 +27,16 @@ export class AuthController {
   @Get('me')
   getProfile(@Request() req: { user: { id: string } }) {
     return this.authService.getProfile(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Patch('profile')
+  updateProfile(
+    @Request() req: { user: { id: string } },
+    @Body() body: { firstName?: string; lastName?: string; contactNumber?: string },
+  ) {
+    return this.authService.updateProfile(req.user.id, body);
   }
 
   @Post('forgot-password')

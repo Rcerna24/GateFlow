@@ -115,6 +115,25 @@ export class AuthService {
     return this.stripPassword(user);
   }
 
+  async updateProfile(
+    userId: string,
+    data: { firstName?: string; lastName?: string; contactNumber?: string },
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.firstName !== undefined && { firstName: data.firstName }),
+        ...(data.lastName !== undefined && { lastName: data.lastName }),
+        ...(data.contactNumber !== undefined && { contactNumber: data.contactNumber || null }),
+      },
+    });
+    return this.stripPassword(updated);
+  }
+
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
