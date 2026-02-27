@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
 import {
   QrCode,
   User,
@@ -13,6 +14,9 @@ import {
   Camera,
   ImagePlus,
   X,
+  Download,
+  Pencil,
+  Save,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,18 +25,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import DashboardLayout from '@/components/DashboardLayout';
-import { entryLogsApi, incidentsApi, sosApi } from '@/lib/api';
+import { entryLogsApi, incidentsApi, sosApi, authApi } from '@/lib/api';
 import { severityTone, statusTone, roleTone, formatDateTime, formatDate } from '@/lib/constants';
 import type { EntryLog, Incident, CreateIncidentPayload, SOSBroadcast } from '@/types';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const [entries, setEntries] = useState<EntryLog[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [activeSos, setActiveSos] = useState<SOSBroadcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  /* ── Edit profile state ──────────────────────────────── */
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', contactNumber: '' });
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  /* ── QR ref for export ───────────────────────────────── */
+  const qrWrapperRef = useRef<HTMLDivElement>(null);
 
   const [incidentForm, setIncidentForm] = useState<CreateIncidentPayload>({
     title: '',
@@ -125,6 +137,80 @@ export default function DashboardPage() {
   const lastEntry = useMemo(() => entries[0], [entries]);
   const openIncidents = useMemo(() => incidents.filter((i) => i.status === 'PENDING').length, [incidents]);
 
+  /* ── Export QR as PNG ────────────────────────────────── */
+  const handleExportQr = useCallback(() => {
+    if (!qrWrapperRef.current || !user) return;
+    const svg = qrWrapperRef.current.querySelector('svg');
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const padding = 32;
+    const size = 300;
+    canvas.width = size + padding * 2;
+    canvas.height = size + padding * 2 + 40; // extra space for name label
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, padding, padding, size, size);
+      // Draw name below QR
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 14px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${user.firstName} ${user.lastName}`, canvas.width / 2, size + padding + 24);
+
+      const link = document.createElement('a');
+      link.download = `GateFlow-QR-${user.firstName}-${user.lastName}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast.success('QR code downloaded.');
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  }, [user]);
+
+  /* ── Profile edit handlers ───────────────────────────── */
+  const startEditing = () => {
+    if (!user) return;
+    setProfileForm({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      contactNumber: user.contactNumber ?? '',
+    });
+    setEditingProfile(true);
+  };
+
+  const cancelEditing = () => {
+    setEditingProfile(false);
+  };
+
+  const saveProfile = async () => {
+    if (!profileForm.firstName.trim() || !profileForm.lastName.trim()) {
+      toast.error('First name and last name are required.');
+      return;
+    }
+    setSavingProfile(true);
+    try {
+      const updated = await authApi.updateProfile({
+        firstName: profileForm.firstName.trim(),
+        lastName: profileForm.lastName.trim(),
+        contactNumber: profileForm.contactNumber.trim(),
+      });
+      updateUser(updated);
+      setEditingProfile(false);
+      toast.success('Profile updated successfully.');
+    } catch {
+      toast.error('Failed to update profile. Please try again.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   if (!user) return null;
 
   const isFaculty = user.role === 'FACULTY' || user.role === 'STAFF';
@@ -173,12 +259,16 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-3">
-            <div className="p-3 bg-white rounded-lg border border-slate-200 shadow-sm">
+            <div ref={qrWrapperRef} className="p-3 bg-white rounded-lg border border-slate-200 shadow-sm">
               <QRCodeSVG value={user.qrToken} size={150} level="H" includeMargin={false} />
             </div>
             <p className="text-[11px] text-slate-500 text-center">
               Present this QR code at campus gates for ingress/egress.
             </p>
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs w-full" onClick={handleExportQr}>
+              <Download size={14} />
+              Download QR Code
+            </Button>
           </CardContent>
         </Card>
 
@@ -217,40 +307,93 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <User size={15} className="text-slate-500" />
-              Profile
+            <CardTitle className="text-sm flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <User size={15} className="text-slate-500" />
+                Profile
+              </span>
+              {!editingProfile && (
+                <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-slate-500" onClick={startEditing}>
+                  <Pencil size={12} /> Edit
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500">Name</span>
-              <span className="font-medium text-slate-900">{user.firstName} {user.lastName}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500">Email</span>
-              <span className="font-medium text-slate-900">{user.email}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500">Role</span>
-              <Badge variant="outline" className={`text-[10px] ${roleTone[user.role] ?? 'bg-slate-100 text-slate-700'}`}>
-                {user.role}
-              </Badge>
-            </div>
-            {user.contactNumber && (
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Contact</span>
-                <span className="font-medium text-slate-900">{user.contactNumber}</span>
+            {editingProfile ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-fn" className="text-xs text-slate-600">First Name</Label>
+                    <Input
+                      id="edit-fn"
+                      value={profileForm.firstName}
+                      onChange={(e) => setProfileForm((p) => ({ ...p, firstName: e.target.value }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-ln" className="text-xs text-slate-600">Last Name</Label>
+                    <Input
+                      id="edit-ln"
+                      value={profileForm.lastName}
+                      onChange={(e) => setProfileForm((p) => ({ ...p, lastName: e.target.value }))}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="edit-contact" className="text-xs text-slate-600">Contact Number</Label>
+                  <Input
+                    id="edit-contact"
+                    value={profileForm.contactNumber}
+                    onChange={(e) => setProfileForm((p) => ({ ...p, contactNumber: e.target.value }))}
+                    placeholder="+63 917 000 0000"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" className="flex-1 gap-1.5 text-xs" onClick={saveProfile} disabled={savingProfile}>
+                    <Save size={13} />
+                    {savingProfile ? 'Saving…' : 'Save'}
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-xs" onClick={cancelEditing} disabled={savingProfile}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Name</span>
+                  <span className="font-medium text-slate-900">{user.firstName} {user.lastName}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Email</span>
+                  <span className="font-medium text-slate-900">{user.email}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Role</span>
+                  <Badge variant="outline" className={`text-[10px] ${roleTone[user.role] ?? 'bg-slate-100 text-slate-700'}`}>
+                    {user.role}
+                  </Badge>
+                </div>
+                {user.contactNumber && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Contact</span>
+                    <span className="font-medium text-slate-900">{user.contactNumber}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Member since</span>
+                  <span className="font-medium text-slate-900">{formatDate(user.createdAt)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">QR Token</span>
+                  <span className="font-mono text-[11px] text-slate-500 truncate max-w-[140px]">{user.qrToken}</span>
+                </div>
+              </>
             )}
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500">Member since</span>
-              <span className="font-medium text-slate-900">{formatDate(user.createdAt)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-500">QR Token</span>
-              <span className="font-mono text-[11px] text-slate-500 truncate max-w-[140px]">{user.qrToken}</span>
-            </div>
           </CardContent>
         </Card>
       </div>

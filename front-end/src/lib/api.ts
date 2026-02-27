@@ -58,6 +58,9 @@ export const authApi = {
 
   me: () => api.get<User>('/auth/me').then((r) => r.data),
 
+  updateProfile: (data: { firstName?: string; lastName?: string; contactNumber?: string }) =>
+    api.patch<User>('/auth/profile', data).then((r) => r.data),
+
   forgotPassword: (email: string) =>
     api.post<{ message: string; resetToken?: string; resetLink?: string }>('/auth/forgot-password', { email }).then((r) => r.data),
 

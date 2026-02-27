@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (data: LoginPayload) => Promise<AuthResponse>;
   register: (data: RegisterPayload) => Promise<AuthResponse>;
   logout: () => void;
+  updateUser: (updated: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -83,8 +84,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('gateflow_user');
   }, []);
 
+  const updateUser = useCallback((updated: User) => {
+    setUser(updated);
+    localStorage.setItem('gateflow_user', JSON.stringify(updated));
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
