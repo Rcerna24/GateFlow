@@ -9,6 +9,7 @@ import ForgotPasswordPage from './pages/auth/forgot-password/ForgotPasswordPage'
 import ResetPasswordPage from './pages/auth/reset-password/ResetPasswordPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import AdminDashboardPage from './pages/dashboard/AdminDashboardPage';
+import GuardDashboardPage from './pages/dashboard/GuardDashboardPage';
 
 function App() {
   return (
@@ -27,6 +28,11 @@ function App() {
           {/* Student / Faculty / Staff dashboard */}
           <Route element={<ProtectedRoute allowedRoles={['STUDENT', 'FACULTY', 'STAFF']} />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+          </Route>
+
+          {/* Guard dashboard */}
+          <Route element={<ProtectedRoute allowedRoles={['GUARD']} />}>
+            <Route path="/guard-dashboard" element={<GuardDashboardPage />} />
           </Route>
 
           {/* Admin dashboard */}

@@ -159,7 +159,7 @@ const SignupPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await register({
+      const res = await register({
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName,
@@ -168,7 +168,7 @@ const SignupPage: React.FC = () => {
         contactNumber: formData.contactNumber || undefined,
       });
       navigate('/dashboard');
-      // Note: signup is only for STUDENT/FACULTY/STAFF so no admin redirect needed
+      // Note: signup is only for STUDENT/FACULTY/STAFF so no guard/admin redirect needed
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: ApiError; status?: number }; request?: unknown; message?: string };
 

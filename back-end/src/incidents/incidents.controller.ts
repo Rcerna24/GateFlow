@@ -5,6 +5,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { IncidentsService } from './incidents.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';
+import { ResolveIncidentDto } from './dto/resolve-incident.dto';
 
 @ApiTags('incidents')
 @Controller('incidents')
@@ -26,7 +27,7 @@ export class IncidentsController {
     return this.incidentsService.findByUser(req.user.id);
   }
 
-  /** Admin – list all incidents */
+  /** Admin / Guard – list all incidents */
   @Roles('ADMIN', 'GUARD')
   @Get()
   findAll() {
@@ -36,10 +37,7 @@ export class IncidentsController {
   /** Admin / Guard – resolve an incident */
   @Roles('ADMIN', 'GUARD')
   @Patch(':id/resolve')
-  resolve(
-    @Param('id') id: string,
-    @Body() body: { actionTaken: string },
-  ) {
-    return this.incidentsService.resolve(id, body.actionTaken);
+  resolve(@Param('id') id: string, @Body() dto: ResolveIncidentDto) {
+    return this.incidentsService.resolve(id, dto);
   }
 }

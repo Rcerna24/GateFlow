@@ -23,6 +23,7 @@ export default function ProtectedRoute({ allowedRoles }: Props) {
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     // Redirect to the correct dashboard for the user's role
     if (user.role === 'ADMIN') return <Navigate to="/admin-dashboard" replace />;
+    if (user.role === 'GUARD') return <Navigate to="/guard-dashboard" replace />;
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { SosService } from './sos.service';
-import type { EmergencyType } from '@prisma/client';
+import { CreateSosDto } from './dto/create-sos.dto';
 
 @ApiTags('sos')
 @Controller('sos')
@@ -30,9 +30,9 @@ export class SosController {
   @Post()
   create(
     @Request() req: { user: { id: string } },
-    @Body() body: { type: EmergencyType; message: string },
+    @Body() dto: CreateSosDto,
   ) {
-    return this.sosService.create(req.user.id, body.type, body.message);
+    return this.sosService.create(req.user.id, dto);
   }
 
   /** Admin / Guard – close an active SOS */

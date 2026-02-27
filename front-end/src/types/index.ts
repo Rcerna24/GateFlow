@@ -70,6 +70,11 @@ export interface EntryLog {
   location: string;
   guardId: string;
   timestamp: string;
+  user?: {
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
   guard?: {
     firstName: string;
     lastName: string;
@@ -92,6 +97,11 @@ export interface Incident {
   imageUrl: string | null;
   createdAt: string;
   resolvedAt: string | null;
+  reportedBy?: {
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
 }
 
 export interface CreateIncidentPayload {
@@ -154,7 +164,29 @@ export interface AdminIncident extends Incident {
   };
 }
 
+// ─── Guard-specific payloads ─────────────────────────────
+
+export interface CreateEntryLogPayload {
+  qrToken: string;
+  type: 'ENTRY' | 'EXIT';
+  location: string;
+}
+
+export interface QrLookupResult {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  qrToken: string;
+}
+
 export interface CreateSOSPayload {
   type: EmergencyType;
   message: string;
+}
+
+export interface ResolveIncidentPayload {
+  actionTaken?: string;
 }

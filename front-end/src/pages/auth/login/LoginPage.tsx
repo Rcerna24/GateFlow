@@ -76,6 +76,7 @@ const LoginPage: React.FC = () => {
       const stored = localStorage.getItem('gateflow_user');
       const role = stored ? JSON.parse(stored).role : null;
       if (role === 'ADMIN') navigate('/admin-dashboard');
+      else if (role === 'GUARD') navigate('/guard-dashboard');
       else navigate('/dashboard');
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: ApiError; status?: number }; request?: unknown; message?: string };

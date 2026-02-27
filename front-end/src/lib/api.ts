@@ -14,6 +14,9 @@ import type {
   AdminEntryLog,
   AdminIncident,
   CreateSOSPayload,
+  CreateEntryLogPayload,
+  QrLookupResult,
+  ResolveIncidentPayload,
 } from '@/types';
 
 const api = axios.create({
@@ -92,6 +95,18 @@ export const visitorPassApi = {
 export const entryLogsApi = {
   getMyEntries: () =>
     api.get<EntryLog[]>('/entry-logs/me').then((r) => r.data),
+
+  /** Guard: scan QR to create entry/exit */
+  scan: (data: CreateEntryLogPayload) =>
+    api.post<EntryLog>('/entry-logs/scan', data).then((r) => r.data),
+
+  /** Guard: look up user by QR token */
+  lookupQr: (qrToken: string) =>
+    api.get<QrLookupResult>(`/entry-logs/lookup/${qrToken}`).then((r) => r.data),
+
+  /** Guard: get all recent logs */
+  getRecent: () =>
+    api.get<EntryLog[]>('/entry-logs/recent').then((r) => r.data),
 };
 
 // ─── Incidents ───────────────────────────────────────────
@@ -102,6 +117,14 @@ export const incidentsApi = {
 
   getMyIncidents: () =>
     api.get<Incident[]>('/incidents/me').then((r) => r.data),
+
+  /** Guard/Admin: get all incidents */
+  getAll: () =>
+    api.get<Incident[]>('/incidents').then((r) => r.data),
+
+  /** Guard/Admin: resolve an incident */
+  resolve: (id: string, data: ResolveIncidentPayload) =>
+    api.patch<Incident>(`/incidents/${id}/resolve`, data).then((r) => r.data),
 };
 
 // ─── SOS Broadcasts ──────────────────────────────────────
@@ -113,9 +136,11 @@ export const sosApi = {
   getAll: () =>
     api.get<SOSBroadcast[]>('/sos').then((r) => r.data),
 
+  /** Guard/Admin: trigger a new SOS broadcast */
   create: (data: CreateSOSPayload) =>
     api.post<SOSBroadcast>('/sos', data).then((r) => r.data),
 
+  /** Guard/Admin: close an SOS broadcast */
   close: (id: string) =>
     api.patch<SOSBroadcast>(`/sos/${id}/close`).then((r) => r.data),
 };
